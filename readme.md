@@ -11,7 +11,7 @@ Tested with Zabbix Version 6.0 on Ubuntu Server 20.04 LTS and 3CX Server 18.
 2. Runn the following install comand:
 
 ``` shell
-sudo apt-get install git -y | \
+sudo apt update && sudo apt install git -y | \
 git clone https://github.com/Noahnc/zabbix_3cx_monitoring.git | \
 sudo chmod +x zabbix_3cx_monitoring/install.sh | \
 sudo ./zabbix_3cx_monitoring/install.sh
