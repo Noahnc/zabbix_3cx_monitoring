@@ -10,8 +10,12 @@
 
 
 zabbix_external_scripts_path="/usr/lib/zabbix/externalscripts/"
-addon_folder_name="3cx_monitoring"
-python_version="python3.9"
+api_models_folder="api_models_3cx_monitoring"
+addon_script_file="3cx_monitoring.sh"
+api_models_folder_path="${zabbix_external_scripts_path}${api_models_folder}"
+addon_script_file_path="${zabbix_external_scripts_path}${addon_script_file}"
+data_cache_folder_path="/var/3cx_monitoring_datacache"
+python_version="python3.10"
 
 
 
@@ -33,17 +37,25 @@ function OK() {
 
 function error() {
     echo -e "\e[31m
-Error while executing the script.:
+Error while executing the script:
 $1
 Pleas check the shell output.\e[39m"
     exit 1
 }
 
+if (( $EUID != 0 )); then
+    error "Pleas run this script with root privileges."
+fi
+
+apt update  || error "Error while updating the apt cache"
+
 if ! [[ -d $zabbix_external_scripts_path ]]; then
-    error "Zabbix script folder not found on this system is the zabbix server installed?"
+    error "Zabbix script folder not found on this system, is the zabbix server installed?"
 fi
 
 if ! [[ -x "$(command -v $python_version)" ]]; then
+    apt install software-properties-common -y || error "Error while installing software-properties-common"
+    add-apt-repository ppa:deadsnakes/ppa -y || error "Error while adding ppa:deadsnakes/ppa"
     apt-get install $python_version -y
     OK "$python_version installed"
 else
@@ -58,15 +70,19 @@ else
 fi
 
 
-pip install -r requirements.txt || error "Error while installing requirements for python"
+pip install -r requirements.txt || error "Error while installing python requirements"
 
 
-if ! [[ -d "$zabbix_external_scripts_path" + "$addon_folder_name" ]]; then
-    mkdir /etc/$varSmartMonitorFolder
-    OK "Zabbix script folder created"
+if ! [[ -d $api_models_folder_path ]]; then
+    mkdir "$api_models_folder_path"
+    OK "Folder for api models created"
 else
-    rm -r "$zabbix_external_scripts_path" + "$addon_folder_name" + "/*"
-    OK "Old files from zabbix script folder removed"
+    rm -rfv "$api_models_folder_path/"
+    mkdir "$api_models_folder_path"
+    OK "Current Installation detected, removing old files"
 fi
 
-cp /src/ $zabbix_external_scripts_path + $addon_folder_name + "/" || error "Error while copying files to zabbix script folder"
+
+cp -r "src/$api_models_folder/." "$api_models_folder_path/" || error "Error while copying api models"
+cp -r "src/$addon_script_file" "$zabbix_external_scripts_path" || error "Error while copying api models"
+OK "All fiiles copppied, installation successful"
