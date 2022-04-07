@@ -47,6 +47,8 @@ def main():
                         help='TCP Port of the 3cx server WebUI')
     parser.add_argument('-c', '--category', type=str,
                         help='The category of the values which should be returned')
+    parser.add_argument('--discovery', type=bool,
+                        help='flag to set in zabbix discovery mode') # is not really used in the script itself, but is required to have a unique discovery key in zabbix
     parser.add_argument('-v', '--version', action='version',
                         version=VERSION, help='Print script version and exit')
 
@@ -110,7 +112,7 @@ def getJsonOfCategory(category):
             for service in services:
                 temp_dic = {
                     "name": service.name,
-                    "status": service.status
+                    "status": service.statusservices
                 }
                 dic.append(temp_dic)
         case "3cx-trunks":
