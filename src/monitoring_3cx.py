@@ -11,8 +11,6 @@
 from argparse import ArgumentParser
 import json
 import requests
-import os
-import time
 
 
 from api_models_3cx_monitoring.trunks import welcome_from_dict_trunks
@@ -104,7 +102,9 @@ def getJsonOfCategory(category):
                 "IpBlockCount": values.blacklisted_ip_count,
                 "LicCode": values.license_key,
                 "InstVersion": values.version,
-                "MaintenanceExpiryDate": values.expiration_date
+                "LicenseExpireDateUnix": values.expiration_date.timestamp(),
+                "3CXFQDN": values.fqdn
+
             }
         case "3cx-services":
             dic = []
@@ -163,7 +163,7 @@ def getAccessCookie():
         return cookie.get_dict()
     else :
         print("Authentication error, wrong username or password: " + response.text)
-        return None
+        exit(10)
 
 # create a function that takes a filename and a time in seconds and returns true if the file is older than the given time
 # def checkIfFileIsOlderThan(self, filename, modifiedTime):
