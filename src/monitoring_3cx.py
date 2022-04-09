@@ -8,6 +8,7 @@
 #
 #                    Version 1.0 | 04.04.2022
 
+
 from argparse import ArgumentParser
 import json
 import requests
@@ -23,14 +24,19 @@ base_url_3cx = ""
 username = ""
 password = ""
 chacheFolderPath = ""
+scriptHealthCheck = False
+debugMode = False
 chacheTimeInSeconds = 0
 session = requests.Session()
+
 
 def main():
     # global script variables
     global base_url_3cx
     global username
     global password
+    global scriptHealthCheck
+    global debugMode
 
     # getting all arguments
     parser = ArgumentParser(
@@ -45,8 +51,10 @@ def main():
                         help='TCP Port of the 3cx server WebUI')
     parser.add_argument('-c', '--category', type=str,
                         help='The category of the values which should be returned')
+    parser.add_argument('--debug', type=bool, default=False,
+                        help='prints more information when a error occurs')
     parser.add_argument('--discovery', type=bool,
-                        help='flag to set in zabbix discovery mode') # is not really used in the script itself, but is required to have a unique discovery key in zabbix
+                        help='flag to set in zabbix discovery mode')  # is not really used in the script itself, but is required to have a unique discovery key in zabbix
     parser.add_argument('-v', '--version', action='version',
                         version=VERSION, help='Print script version and exit')
 
@@ -61,14 +69,21 @@ def main():
     # set global variables
     username = args.username
     password = args.password
+    debugMode = args.debug
 
     # set base url based on https port
     if args.tcpport != 443:
-        base_url_3cx = "https://" + str(args.domain) + ":" + str(args.tcpport) + "/api/"
+        base_url_3cx = "https://" + \
+            str(args.domain) + ":" + str(args.tcpport) + "/api/"
     else:
         base_url_3cx = "https://" + str(args.domain) + "/api/"
 
-    print(getJsonOfCategory(args.category))
+    if args.category == "script-check":
+        scriptHealthCheck = True
+        ScriptFunctionCheck()
+    else:
+        print(getJsonOfCategory(args.category))
+
 
 # function that calculates the percentage between two values
 def calculatePercentage(used, total):
@@ -112,7 +127,7 @@ def getJsonOfCategory(category):
             for service in services:
                 temp_dic = {
                     "name": service.name,
-                    "status": service.statusservices
+                    "status": service.status
                 }
                 dic.append(temp_dic)
         case "3cx-trunks":
@@ -124,32 +139,46 @@ def getJsonOfCategory(category):
                     "registered": trunk.is_registered,
                 }
                 dic.append(temp_dic)
-
-    return json.dumps(dic, separators=(',', ':'), default=str)
+    try:
+        return json.dumps(dic, separators=(',', ':'), default=str)
+    except Exception as e:
+        exitScript(1, "error while creating json string", e)
 
 # function to get all 3cx services as services object
 def get3CXServices():
     response = getDataFrom3CXAPI('ServiceList')
-    data = welcome_from_dict_services(json.loads(response))
+    try:
+        data = welcome_from_dict_services(json.loads(response))
+    except Exception as e:
+        exitScript(1, "3CX Services parse error", e)
     return data
 
-# function to get all 3cx trunks as services object
+# function to get all 3cx trunks objects as list
 def get3CXTrunks():
     response = getDataFrom3CXAPI('TrunkList')
-    data = welcome_from_dict_trunks(json.loads(response))
+    try:
+        data = welcome_from_dict_trunks(json.loads(response))
+    except Exception as e:
+        exitScript(1, "3CX Trunks parse error", e)
     return data
 
-# function to get 3cx status as services object
+# function to get 3cx status as object
 def get3CXSystemStatus():
     response = getDataFrom3CXAPI('SystemStatus')
-    data = welcome_from_dict_systemstatus(json.loads(response))
+    try:
+        data = welcome_from_dict_systemstatus(json.loads(response))
+    except Exception as e:
+        exitScript(1, "3CX SystemStatus parse error", e)
     return data
 
 # function that gets the data from the 3cx api on a specific recource url
 def getDataFrom3CXAPI(uri):
-    url = base_url_3cx + uri
-    headers = {'content-type': 'application/json;charset=UTF-8'}
-    response = session.get(url, headers=headers, cookies=getAccessCookie())
+    try:
+        url = base_url_3cx + uri
+        headers = {'content-type': 'application/json;charset=UTF-8'}
+        response = session.get(url, headers=headers, cookies=getAccessCookie())
+    except Exception as e:
+        exitScript(10, "Error while connecting to 3cx api", e)
     return response.text
 
 # function that gets the access cookie for the 3cx api
@@ -157,40 +186,35 @@ def getAccessCookie():
     url = base_url_3cx + 'login'
     payload = {'username': username, 'password': password}
     headers = {'content-type': 'application/json'}
-    response = session.post(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
+    try:
+        response = session.post(url, data=json.dumps(
+            payload).encode('utf-8'), headers=headers)
+    except Exception as e:
+        exitScript(1, "Error while connecting to 3cx api", e)
     if response.status_code == 200 and response.text == 'AuthSuccess':
         cookie = response.cookies
         return cookie.get_dict()
-    else :
-        print("Authentication error, wrong username or password: " + response.text)
-        exit(10)
+    else:
+        exitScript(10, "API authentication error", response.text)
 
-# create a function that takes a filename and a time in seconds and returns true if the file is older than the given time
-# def checkIfFileIsOlderThan(self, filename, modifiedTime):
-#     if os.path.isfile(self.chacheFolderPath + '/' + filename):
-#         file_time = os.path.getmtime(self.chacheFolderPath + '/' + filename)
-#         if modifiedTime < (time.time() - file_time):
-#             return True
-#         else:
-#             return False
-#     else:
-#         return True
 
-# def checkIfCacheFileExists(self, filename):
-#     return os.path.isfile(self.chacheFolderPath + '/' + filename)
+# function to test all components of the script and return the status to the zabbix script healthcheck item
+def ScriptFunctionCheck():
+    testjson1 = getJsonOfCategory("3cx-status")
+    testjson2 = getJsonOfCategory("3cx-info")
+    testjson3 = getJsonOfCategory("3cx-services")
+    testjson4 = getJsonOfCategory("3cx-trunks")
+    exitScript(0, "OK", None)
 
-# def checkIfFolderExists(self):
-#     if not os.path.exists(self.chacheFolderPath):
-#         os.mkdir(self.chacheFolderPath)
 
-# def saveResponseToCache(self, response, filename):
-#     self.checkIfFolderExists()
-#     with open(self.chacheFolderPath + "/" + filename, 'w') as outfile:
-#         json.dump(json.loads(response), outfile)
+# function to exit the script with a specific exit code and message
+def exitScript(exitCode, message, e):
+    print(message) if scriptHealthCheck and debugMode == False else None
+    if debugMode and e != None and exitCode != 0:
+        print(message + ": ")
+        print(e)
+    exit(exitCode)
 
-# def loadResponseFromCache(self, filename):
-#     with open(self.chacheFolderPath + '/' + filename, 'r') as outfile:
-#         return json.load(outfile)
 
 if __name__ == '__main__':
     main()
