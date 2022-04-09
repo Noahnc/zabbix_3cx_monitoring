@@ -11,19 +11,25 @@
 
 from argparse import ArgumentParser
 import json
+import socket
 import requests
+import sys
 
-
+# importing all models
 from api_models_3cx_monitoring.trunks import welcome_from_dict_trunks
 from api_models_3cx_monitoring.services import welcome_from_dict_services
 from api_models_3cx_monitoring.system_status import welcome_from_dict_systemstatus
 
+# Config variables
 VERSION = "1.0"
+Min_Python_Version = (3, 10) # python version 3.10 or higher is required
 
 # global variables
-base_url_3cx = ""
-username = ""
-password = ""
+base_url_3cx = None
+username = None
+password = None
+domain = None
+tcp_port = None
 chacheFolderPath = ""
 scriptHealthCheck = False
 debugMode = False
@@ -39,6 +45,8 @@ def main():
     global password
     global scriptHealthCheck
     global debugMode
+    global domain
+    global tcp_port
 
     # getting all arguments
     parser = ArgumentParser(
@@ -71,6 +79,8 @@ def main():
     # set global variables
     username = args.username
     password = args.password
+    domain = args.domain
+    tcp_port = args.tcpport
     debugMode = args.debug
 
     # set base url based on https port
@@ -81,10 +91,11 @@ def main():
         base_url_3cx = "https://" + str(args.domain) + "/api/"
 
     # call ScriptHealtCheck if specified in category-argument
-    if args.category == "script-check":
+    if args.category == "script-health-check":
         scriptHealthCheck = True
         ScriptHealtCheck()
     else:
+        checkPort(domain, tcp_port) # check if port is open before trying to connect to 3cx api
         print(getJsonOfCategory(args.category))
 
 
@@ -142,6 +153,8 @@ def getJsonOfCategory(category):
                     "registered": trunk.is_registered,
                 }
                 dic.append(temp_dic)
+        case _:
+            exitScript(1, "Invalid category argument specified", category)
     try:
         return json.dumps(dic, separators=(',', ':'), default=str)
     except Exception as e:
@@ -205,19 +218,39 @@ def getAccessCookie():
 
 # function to test all components of the script and return the status to the zabbix script healthcheck item
 def ScriptHealtCheck():
+
+    if sys.version_info < Min_Python_Version:
+        exitScript(1, "Python version is too old", sys.version_info)
+    checkPort(domain, tcp_port)
     testjson1 = getJsonOfCategory("3cx-status")
     testjson2 = getJsonOfCategory("3cx-info")
     testjson3 = getJsonOfCategory("3cx-services")
     testjson4 = getJsonOfCategory("3cx-trunks")
-    exitScript(0, "OK", None)
+    exitScript(0, "OK", "Script test successful, everything is fine")
+    
+    # check if python version is newer than specified in Min_Python_Version
+    if sys.version_info.major >= Min_Python_Version[0] and sys.version_info.minor >= Min_Python_Version[1]:
+        exitScript(1, "Python version is too old", sys.version_info)
+
+# checks if the specified port is open
+def checkPort(host, port):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        s.connect((host, port))
+        s.close()
+        return True
+    except Exception as e:
+        exitScript(1, "Port " + str(port) + " not open on host " + host, e)
+
 
 
 # function to exit the script with a specific exit code and message
-def exitScript(exitCode, message, e):
+def exitScript(exitCode, message, info):
     print(message) if scriptHealthCheck and debugMode == False else None
-    if debugMode and e != None and exitCode != 0:
+    if debugMode:
         print(message + ": ")
-        print(e)
+        print(info)
     exit(exitCode)
 
 if __name__ == '__main__':

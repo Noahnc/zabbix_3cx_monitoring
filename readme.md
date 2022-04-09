@@ -17,9 +17,17 @@ sudo chmod +x zabbix_3cx_monitoring/install.sh | \
 sudo ./zabbix_3cx_monitoring/install.sh
 ```
 3. Test if the scrip works.
+
+Script-Check
 ``` shell
-./usr/lib/zabbix/externalscripts/monitoring_3cx.py -u '<username>' -p '<password>' -d '<3cx domain>' -c "3cx-status"
+./usr/lib/zabbix/externalscripts/monitoring_3cx.py -u '<username>' -p '<password>' -d '<3cx domain>' --tcpport 443 -c "script-health-check" --debug True
 ```
+
+3CX Trunks as JSON
+``` shell
+./usr/lib/zabbix/externalscripts/monitoring_3cx.py -u '<username>' -p '<password>' -d '<3cx domain>' --tcpport 443 -c "3cx-trunks" --debug True
+```
+
 4. Import the zabbix template.
 5. Create a new host with the template and specify the required variables
 
