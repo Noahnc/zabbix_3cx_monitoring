@@ -20,6 +20,7 @@ from api_models_3cx_monitoring.system_status import welcome_from_dict_systemstat
 
 VERSION = "1.0"
 
+# global variables
 base_url_3cx = ""
 username = ""
 password = ""
@@ -27,6 +28,7 @@ chacheFolderPath = ""
 scriptHealthCheck = False
 debugMode = False
 chacheTimeInSeconds = 0
+auth_cookie = None
 session = requests.Session()
 
 
@@ -54,7 +56,7 @@ def main():
     parser.add_argument('--debug', type=bool, default=False,
                         help='prints more information when a error occurs')
     parser.add_argument('--discovery', type=bool,
-                        help='flag to set in zabbix discovery mode')  # is not really used in the script itself, but is required to have a unique discovery key in zabbix
+                        help='flag to set in zabbix discovery mode')  # is not really used in the script itself, but since zabbix requires each item to have a unique key, this is used for the discovery rule
     parser.add_argument('-v', '--version', action='version',
                         version=VERSION, help='Print script version and exit')
 
@@ -64,7 +66,7 @@ def main():
     # check if all required arguments are set and exit if not
     if args.username is None or args.password is None or args.domain is None or args.category is None:
         parser.print_help()
-        exit(1)
+        exitScript(1, "Not all required arguments provided", None)
 
     # set global variables
     username = args.username
@@ -78,9 +80,10 @@ def main():
     else:
         base_url_3cx = "https://" + str(args.domain) + "/api/"
 
+    # call ScriptHealtCheck if specified in category-argument
     if args.category == "script-check":
         scriptHealthCheck = True
-        ScriptFunctionCheck()
+        ScriptHealtCheck()
     else:
         print(getJsonOfCategory(args.category))
 
@@ -173,16 +176,18 @@ def get3CXSystemStatus():
 
 # function that gets the data from the 3cx api on a specific recource url
 def getDataFrom3CXAPI(uri):
+    getAccessCookie() if auth_cookie is None else None
     try:
         url = base_url_3cx + uri
         headers = {'content-type': 'application/json;charset=UTF-8'}
-        response = session.get(url, headers=headers, cookies=getAccessCookie())
+        response = session.get(url, headers=headers, cookies=auth_cookie)
     except Exception as e:
-        exitScript(10, "Error while connecting to 3cx api", e)
+        exitScript(1, "Error while connecting to 3cx api", e)
     return response.text
 
 # function that gets the access cookie for the 3cx api
 def getAccessCookie():
+    global auth_cookie
     url = base_url_3cx + 'login'
     payload = {'username': username, 'password': password}
     headers = {'content-type': 'application/json'}
@@ -190,16 +195,16 @@ def getAccessCookie():
         response = session.post(url, data=json.dumps(
             payload).encode('utf-8'), headers=headers)
     except Exception as e:
-        exitScript(1, "Error while connecting to 3cx api", e)
+        exitScript(1, "Error while connecting to 3cx server api", e)
     if response.status_code == 200 and response.text == 'AuthSuccess':
         cookie = response.cookies
-        return cookie.get_dict()
+        auth_cookie = cookie
     else:
-        exitScript(10, "API authentication error", response.text)
+        exitScript(1, "API authentication error", response.text)
 
 
 # function to test all components of the script and return the status to the zabbix script healthcheck item
-def ScriptFunctionCheck():
+def ScriptHealtCheck():
     testjson1 = getJsonOfCategory("3cx-status")
     testjson2 = getJsonOfCategory("3cx-info")
     testjson3 = getJsonOfCategory("3cx-services")
@@ -214,7 +219,6 @@ def exitScript(exitCode, message, e):
         print(message + ": ")
         print(e)
     exit(exitCode)
-
 
 if __name__ == '__main__':
     main()
