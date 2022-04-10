@@ -10,8 +10,10 @@
 
 
 zabbix_external_scripts_path="/usr/lib/zabbix/externalscripts/"
+project_folder_name="zabbix_3cx_monitoring"
+scrip_folder_path="$(dirname -- "$0")"
 api_models_folder="api_models_3cx_monitoring"
-addon_script_file="3cx_monitoring.sh"
+addon_script_file="monitoring_3cx.py"
 api_models_folder_path="${zabbix_external_scripts_path}${api_models_folder}"
 addon_script_file_path="${zabbix_external_scripts_path}${addon_script_file}"
 data_cache_folder_path="/var/3cx_monitoring_datacache"
@@ -25,8 +27,8 @@ function ctrl_c() {
     echo ""
     echo -e "\e[31mScript execution manually stopt.\e[39m"
 
-    if [[ $ScriptFolderPath = *"$ProjectFolderName" ]]; then
-        rm -r "$ScriptFolderPath"
+    if [[ $scrip_folder_path = *"$project_folder_name" ]]; then
+        rm -r "$scrip_folder_path"
     fi
     exit 1
 }
@@ -70,7 +72,7 @@ else
 fi
 
 
-pip install -r requirements.txt || error "Error while installing python requirements"
+pip install -r "$scrip_folder_path/requirements.txt" || error "Error while installing python requirements"
 
 
 if ! [[ -d $api_models_folder_path ]]; then
@@ -83,6 +85,6 @@ else
 fi
 
 
-cp -r "src/$api_models_folder/." "$api_models_folder_path/" || error "Error while copying api models"
-cp -r "src/$addon_script_file" "$zabbix_external_scripts_path" || error "Error while copying api models"
+cp -r "$scrip_folder_path/src/$api_models_folder/." "$api_models_folder_path/" || error "Error while copying api models"
+cp -r "$scrip_folder_path/src/$addon_script_file" "$zabbix_external_scripts_path" || error "Error while copying api models"
 OK "All fiiles copppied, installation successful"

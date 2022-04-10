@@ -23,7 +23,7 @@ from api_models_3cx_monitoring.system_status import status, welcome_from_dict_sy
 
 # Config variables
 VERSION = "1.0"
-MIN_PYTHON_VERSION = (3, 10) # python version 3.10 or higher is required
+MIN_PYTHON_VERSION = (3, 9) # python version 3.9 or higher is required
 
 # global variables
 base_url_3cx = None
@@ -112,52 +112,51 @@ def calculatePercentage(used, total) -> float:
 
 # function that takes a category and returns all values of that category as json string
 def getJsonOfCategory(category) -> str:
-    match category:
-        case "3cx-status":
-            values = get3CXSystemStatus()
-            dic = {
-                "FreeMem": values.free_physical_memory,
-                "TotalMem": values.total_physical_memory,
-                "MemoryUsedPercent": calculatePercentage((values.total_physical_memory - values.free_physical_memory), values.total_physical_memory),
-                "CpuUtil": values.cpu_usage,
-                "DiskUsedPercent": calculatePercentage((values.total_disk_space - values.free_disk_space), values.total_disk_space),
-                "TrunkTot": values.trunks_total,
-                "TrunkReg": values.trunks_registered,
-                "LicenseActive": values.license_active,
-                "CallsActive": values.calls_active,
-                "ip_address": values.ip_v4
+    if category == "3cx-status":
+        values = get3CXSystemStatus()
+        dic = {
+            "FreeMem": values.free_physical_memory,
+            "TotalMem": values.total_physical_memory,
+            "MemoryUsedPercent": calculatePercentage((values.total_physical_memory - values.free_physical_memory), values.total_physical_memory),
+            "CpuUtil": values.cpu_usage,
+            "DiskUsedPercent": calculatePercentage((values.total_disk_space - values.free_disk_space), values.total_disk_space),
+            "TrunkTot": values.trunks_total,
+            "TrunkReg": values.trunks_registered,
+            "LicenseActive": values.license_active,
+            "CallsActive": values.calls_active,
+            "ip_address": values.ip_v4
 
-            }
-        case "3cx-info":
-            values = get3CXSystemStatus()
-            dic = {
-                "Autobackup": values.backup_scheduled,
-                "IpBlockCount": values.blacklisted_ip_count,
-                "LicCode": values.license_key,
-                "InstVersion": values.version,
-                "LicenseExpireDateUnix": values.expiration_date.timestamp(),
-                "3CXFQDN": values.fqdn
+        }
+    elif category == "3cx-info":
+        values = get3CXSystemStatus()
+        dic = {
+            "Autobackup": values.backup_scheduled,
+            "IpBlockCount": values.blacklisted_ip_count,
+            "LicCode": values.license_key,
+            "InstVersion": values.version,
+            "LicenseExpireDateUnix": values.expiration_date.timestamp(),
+            "3CXFQDN": values.fqdn
 
+        }
+    elif category == "3cx-services":
+        dic = []
+        services = get3CXServices()
+        for service in services:
+            temp_dic = {
+                "name": service.name,
+                "status": service.status
             }
-        case "3cx-services":
-            dic = []
-            services = get3CXServices()
-            for service in services:
-                temp_dic = {
-                    "name": service.name,
-                    "status": service.status
-                }
-                dic.append(temp_dic)
-        case "3cx-trunks":
-            dic = []
-            trunks = get3CXTrunks().list
-            for trunk in trunks:
-                temp_dic = {
-                    "name": trunk.name,
-                    "registered": trunk.is_registered,
-                }
-                dic.append(temp_dic)
-        case _:
+            dic.append(temp_dic)
+    elif category == "3cx-trunks":
+        dic = []
+        trunks = get3CXTrunks().list
+        for trunk in trunks:
+            temp_dic = {
+                "name": trunk.name,
+                "registered": trunk.is_registered,
+            }
+            dic.append(temp_dic)
+    else:
             exitScript(1, "Invalid category argument specified", category)
     try:
         return json.dumps(dic, separators=(',', ':'), default=str)
