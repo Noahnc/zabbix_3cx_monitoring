@@ -193,7 +193,7 @@ def get3CXSystemStatus() -> status:
 
 # function that gets the data from the 3cx api on a specific recource url
 def getDataFrom3CXAPI(uri) -> str:
-    APIauthentication() if auth_cookie is None else None
+    if auth_cookie is None: APIauthentication()
     try:
         url = base_url_3cx + uri
         headers = {'content-type': 'application/json;charset=UTF-8'}
@@ -245,7 +245,7 @@ def checkPort(host: str, port: int) -> None:
 # function to exit the script with a specific exit code and message
 # errors are only printed, if the script is executed in debug mode as healthcheck
 def exitScript(exitCode: int, message: str, info) -> None:
-    print(message) if scriptHealthCheck and debugMode == False else None
+    if scriptHealthCheck and debugMode == False: print(message)
     if debugMode:
         print(message + ": ")
         print(info)
