@@ -85,5 +85,8 @@ fi
 
 cp -r "$scrip_folder_path/src/$api_models_folder/." "$api_models_folder_path/" || error "Error while copying api models"
 cp -r "$scrip_folder_path/src/$addon_script_file" "$zabbix_external_scripts_path" || error "Error while copying api models"
-chmod +x "$zabbix_external_scripts_path" || error "Error while making scrip executable"
-OK "All fiiles copppied, installation successful"
+chmod +x "${zabbix_external_scripts_path}${addon_script_file}" || error "Error while assigning execution permission to the script"
+
+OK "------------------------------------------------------"
+OK "        Installation finished successfully"
+OK "------------------------------------------------------"
