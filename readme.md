@@ -1,6 +1,6 @@
 # Zabbix 3CX Monitoring by rest api with python script
 
-The Python sctipt and the zabbix template in this repo allow you to monitor a 3CX Server by rest api.
+The Python script and the Zabbix template in this repo allow you to monitor a 3CX Server by rest api.
 
 Tested with Zabbix Version 6.0 on Ubuntu Server 20.04 LTS and 3CX Server 18.
 
@@ -8,7 +8,7 @@ Tested with Zabbix Version 6.0 on Ubuntu Server 20.04 LTS and 3CX Server 18.
 ## Setup
 
 1. Connect to your Zabbix Server over ssh.
-2. Runn the following install comand:
+2. Run the following install command (installs python 3.9 and all required dependencies and copies all files):
 
 ``` shell
 sudo apt update && sudo apt install git -y &&
