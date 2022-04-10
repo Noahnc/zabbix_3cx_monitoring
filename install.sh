@@ -17,7 +17,7 @@ addon_script_file="monitoring_3cx.py"
 api_models_folder_path="${zabbix_external_scripts_path}${api_models_folder}"
 addon_script_file_path="${zabbix_external_scripts_path}${addon_script_file}"
 data_cache_folder_path="/var/3cx_monitoring_datacache"
-python_version="python3.10"
+python_version="python3.9"
 
 
 
@@ -56,8 +56,6 @@ if ! [[ -d $zabbix_external_scripts_path ]]; then
 fi
 
 if ! [[ -x "$(command -v $python_version)" ]]; then
-    apt install software-properties-common -y || error "Error while installing software-properties-common"
-    add-apt-repository ppa:deadsnakes/ppa -y || error "Error while adding ppa:deadsnakes/ppa"
     apt-get install $python_version -y
     OK "$python_version installed"
 else
@@ -72,7 +70,7 @@ else
 fi
 
 
-pip install -r "$scrip_folder_path/requirements.txt" || error "Error while installing python requirements"
+python3.9 -m pip install -r "$scrip_folder_path/requirements.txt" || error "Error while installing python requirements"
 
 
 if ! [[ -d $api_models_folder_path ]]; then
@@ -87,4 +85,5 @@ fi
 
 cp -r "$scrip_folder_path/src/$api_models_folder/." "$api_models_folder_path/" || error "Error while copying api models"
 cp -r "$scrip_folder_path/src/$addon_script_file" "$zabbix_external_scripts_path" || error "Error while copying api models"
+chmod +x "$zabbix_external_scripts_path" || error "Error while making scrip executable"
 OK "All fiiles copppied, installation successful"
