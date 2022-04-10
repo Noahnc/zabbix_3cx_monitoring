@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 ########################################################################
-#         Copyright © by Noah Canadea | All rights reserved
+#                   Copyright © by Noah Canadea
 ########################################################################
 #                           Description
 #    Python script to get all kind of metrics from a 3cx server api
@@ -9,6 +9,7 @@
 #                    Version 1.0 | 04.04.2022
 
 
+# import dependencies
 from argparse import ArgumentParser
 import json
 import socket
@@ -16,13 +17,13 @@ import requests
 import sys
 
 # importing all models
-from api_models_3cx_monitoring.trunks import welcome_from_dict_trunks
-from api_models_3cx_monitoring.services import welcome_from_dict_services
-from api_models_3cx_monitoring.system_status import welcome_from_dict_systemstatus
+from api_models_3cx_monitoring.trunks import trunks, welcome_from_dict_trunks
+from api_models_3cx_monitoring.services import service, welcome_from_dict_services
+from api_models_3cx_monitoring.system_status import status, welcome_from_dict_systemstatus
 
 # Config variables
 VERSION = "1.0"
-Min_Python_Version = (3, 10) # python version 3.10 or higher is required
+MIN_PYTHON_VERSION = (3, 10) # python version 3.10 or higher is required
 
 # global variables
 base_url_3cx = None
@@ -47,6 +48,10 @@ def main():
     global debugMode
     global domain
     global tcp_port
+
+    # exit if python version is too old
+    if sys.version_info < MIN_PYTHON_VERSION:
+        exitScript(1, "Python version is too old", sys.version_info)
 
     # getting all arguments
     parser = ArgumentParser(
@@ -98,25 +103,24 @@ def main():
         checkPort(domain, tcp_port) # check if port is open before trying to connect to 3cx api
         print(getJsonOfCategory(args.category))
 
-
 # function that calculates the percentage between two values
-def calculatePercentage(used, total):
+def calculatePercentage(used, total) -> float:
     if total == 0:
         return 0
     else:
         return round((used / total) * 100, 2)
 
 # function that takes a category and returns all values of that category as json string
-def getJsonOfCategory(category):
+def getJsonOfCategory(category) -> str:
     match category:
         case "3cx-status":
             values = get3CXSystemStatus()
             dic = {
                 "FreeMem": values.free_physical_memory,
                 "TotalMem": values.total_physical_memory,
-                "FreeMemPercent": calculatePercentage(values.free_physical_memory, values.total_physical_memory),
+                "MemoryUsedPercent": calculatePercentage((values.total_physical_memory - values.free_physical_memory), values.total_physical_memory),
                 "CpuUtil": values.cpu_usage,
-                "DiskFreePercent": calculatePercentage(values.free_disk_space, values.total_disk_space),
+                "DiskUsedPercent": calculatePercentage((values.total_disk_space - values.free_disk_space), values.total_disk_space),
                 "TrunkTot": values.trunks_total,
                 "TrunkReg": values.trunks_registered,
                 "LicenseActive": values.license_active,
@@ -161,7 +165,7 @@ def getJsonOfCategory(category):
         exitScript(1, "error while creating json string", e)
 
 # function to get all 3cx services as services object
-def get3CXServices():
+def get3CXServices() -> service:
     response = getDataFrom3CXAPI('ServiceList')
     try:
         data = welcome_from_dict_services(json.loads(response))
@@ -170,7 +174,7 @@ def get3CXServices():
     return data
 
 # function to get all 3cx trunks objects as list
-def get3CXTrunks():
+def get3CXTrunks() -> trunks:
     response = getDataFrom3CXAPI('TrunkList')
     try:
         data = welcome_from_dict_trunks(json.loads(response))
@@ -179,7 +183,7 @@ def get3CXTrunks():
     return data
 
 # function to get 3cx status as object
-def get3CXSystemStatus():
+def get3CXSystemStatus() -> status:
     response = getDataFrom3CXAPI('SystemStatus')
     try:
         data = welcome_from_dict_systemstatus(json.loads(response))
@@ -188,8 +192,8 @@ def get3CXSystemStatus():
     return data
 
 # function that gets the data from the 3cx api on a specific recource url
-def getDataFrom3CXAPI(uri):
-    getAccessCookie() if auth_cookie is None else None
+def getDataFrom3CXAPI(uri) -> str:
+    APIauthentication() if auth_cookie is None else None
     try:
         url = base_url_3cx + uri
         headers = {'content-type': 'application/json;charset=UTF-8'}
@@ -198,8 +202,8 @@ def getDataFrom3CXAPI(uri):
         exitScript(1, "Error while connecting to 3cx api", e)
     return response.text
 
-# function that gets the access cookie for the 3cx api
-def getAccessCookie():
+# function that gets the access cookie from 3cx api
+def APIauthentication() -> None:
     global auth_cookie
     url = base_url_3cx + 'login'
     payload = {'username': username, 'password': password}
@@ -215,38 +219,32 @@ def getAccessCookie():
     else:
         exitScript(1, "API authentication error", response.text)
 
-
-# function to test all components of the script and return the status to the zabbix script healthcheck item
-def ScriptHealtCheck():
-
-    if sys.version_info < Min_Python_Version:
+# function to test all components of the script and return the status to the zabbix healthcheck item
+def ScriptHealtCheck() -> None:
+    # check if installed python version 
+    if sys.version_info < MIN_PYTHON_VERSION:
         exitScript(1, "Python version is too old", sys.version_info)
     checkPort(domain, tcp_port)
     testjson1 = getJsonOfCategory("3cx-status")
     testjson2 = getJsonOfCategory("3cx-info")
     testjson3 = getJsonOfCategory("3cx-services")
     testjson4 = getJsonOfCategory("3cx-trunks")
-    exitScript(0, "OK", "Script test successful, everything is fine")
-    
-    # check if python version is newer than specified in Min_Python_Version
-    if sys.version_info.major >= Min_Python_Version[0] and sys.version_info.minor >= Min_Python_Version[1]:
-        exitScript(1, "Python version is too old", sys.version_info)
+    exitScript(0, "OK", "Script test successful, everything works fine")
 
-# checks if the specified port is open
-def checkPort(host, port):
+# checks if the specified port is open on the remote host
+def checkPort(host: str, port: int) -> None:
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2)
+        s.settimeout(3)
         s.connect((host, port))
         s.close()
         return True
     except Exception as e:
-        exitScript(1, "Port " + str(port) + " not open on host " + host, e)
-
-
+        exitScript(1, "Can't connect to " + host + " on Port " + str(port), e)
 
 # function to exit the script with a specific exit code and message
-def exitScript(exitCode, message, info):
+# errors are only printed, if the script is executed in debug mode as healthcheck
+def exitScript(exitCode: int, message: str, info) -> None:
     print(message) if scriptHealthCheck and debugMode == False else None
     if debugMode:
         print(message + ": ")

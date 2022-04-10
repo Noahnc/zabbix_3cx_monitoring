@@ -95,18 +95,18 @@ class ListElement:
 
 
 @dataclass
-class Welcome:
+class trunks:
     list: List[ListElement]
     is_refresh_trunks_registration_prohibited: bool
     is_licence_standard: bool
 
     @staticmethod
-    def from_dict(obj: Any) -> 'Welcome':
+    def from_dict(obj: Any) -> 'trunks':
         assert isinstance(obj, dict)
         list = from_list(ListElement.from_dict, obj.get("list"))
         is_refresh_trunks_registration_prohibited = from_bool(obj.get("isRefreshTrunksRegistrationProhibited"))
         is_licence_standard = from_bool(obj.get("isLicenceStandard"))
-        return Welcome(list, is_refresh_trunks_registration_prohibited, is_licence_standard)
+        return trunks(list, is_refresh_trunks_registration_prohibited, is_licence_standard)
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -116,9 +116,9 @@ class Welcome:
         return result
 
 
-def welcome_from_dict_trunks(s: Any) -> Welcome:
-    return Welcome.from_dict(s)
+def welcome_from_dict_trunks(s: Any) -> trunks:
+    return trunks.from_dict(s)
 
 
-def welcome_to_dict_trunks(x: Welcome) -> Any:
-    return to_class(Welcome, x)
+def welcome_to_dict_trunks(x: trunks) -> Any:
+    return to_class(trunks, x)

@@ -56,7 +56,7 @@ def to_class(c: Type[T], x: Any) -> dict:
 
 
 @dataclass
-class Welcome:
+class status:
     fqdn: str
     web_meeting_fqdn: str
     web_meeting_status: int
@@ -107,7 +107,7 @@ class Welcome:
     is_spla: bool
 
     @staticmethod
-    def from_dict(obj: Any) -> 'Welcome':
+    def from_dict(obj: Any) -> 'status':
         assert isinstance(obj, dict)
         fqdn = from_str(obj.get("FQDN"))
         web_meeting_fqdn = from_str(obj.get("WebMeetingFQDN"))
@@ -157,7 +157,7 @@ class Welcome:
         product_code = from_str(obj.get("ProductCode"))
         is_audit_log_enabled = from_bool(obj.get("IsAuditLogEnabled"))
         is_spla = from_bool(obj.get("IsSpla"))
-        return Welcome(fqdn, web_meeting_fqdn, web_meeting_status, version, recording_state, activated, max_sim_calls, max_sim_meeting_participants, call_history_count, chat_messages_count, extensions_registered, own_push, ip, ip_v4, ip_v6, local_ip_valid, current_local_ip, available_local_ips, extensions_total, has_unregistered_system_extensions, has_not_running_services, trunks_registered, trunks_total, calls_active, blacklisted_ip_count, memory_usage, physical_memory_usage, free_virtual_memory, total_virtual_memory, free_physical_memory, total_physical_memory, disk_usage, free_disk_space, total_disk_space, cpu_usage, cpu_usage_history, maintenance_expires_at, support, license_active, expiration_date, outbound_rules, backup_scheduled, last_backup_date_time, reseller_name, license_key, product_code, is_audit_log_enabled, is_spla)
+        return status(fqdn, web_meeting_fqdn, web_meeting_status, version, recording_state, activated, max_sim_calls, max_sim_meeting_participants, call_history_count, chat_messages_count, extensions_registered, own_push, ip, ip_v4, ip_v6, local_ip_valid, current_local_ip, available_local_ips, extensions_total, has_unregistered_system_extensions, has_not_running_services, trunks_registered, trunks_total, calls_active, blacklisted_ip_count, memory_usage, physical_memory_usage, free_virtual_memory, total_virtual_memory, free_physical_memory, total_physical_memory, disk_usage, free_disk_space, total_disk_space, cpu_usage, cpu_usage_history, maintenance_expires_at, support, license_active, expiration_date, outbound_rules, backup_scheduled, last_backup_date_time, reseller_name, license_key, product_code, is_audit_log_enabled, is_spla)
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -212,9 +212,9 @@ class Welcome:
         return result
 
 
-def welcome_from_dict_systemstatus(s: Any) -> Welcome:
-    return Welcome.from_dict(s)
+def welcome_from_dict_systemstatus(s: Any) -> status:
+    return status.from_dict(s)
 
 
-def welcome_to_dict_systemstatus(x: Welcome) -> Any:
-    return to_class(Welcome, x)
+def welcome_to_dict_systemstatus(x: status) -> Any:
+    return to_class(status, x)

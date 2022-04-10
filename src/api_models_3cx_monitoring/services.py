@@ -31,7 +31,7 @@ def to_class(c: Type[T], x: Any) -> dict:
 
 
 @dataclass
-class WelcomeElement:
+class service:
     name: str
     display_name: str
     status: int
@@ -43,7 +43,7 @@ class WelcomeElement:
     restart_enabled: bool
 
     @staticmethod
-    def from_dict(obj: Any) -> 'WelcomeElement':
+    def from_dict(obj: Any) -> 'service':
         assert isinstance(obj, dict)
         name = from_str(obj.get("Name"))
         display_name = from_str(obj.get("DisplayName"))
@@ -54,7 +54,7 @@ class WelcomeElement:
         handle_count = from_int(obj.get("HandleCount"))
         start_stop_enabled = from_bool(obj.get("startStopEnabled"))
         restart_enabled = from_bool(obj.get("restartEnabled"))
-        return WelcomeElement(name, display_name, status, memory_used, cpu_usage, thread_count, handle_count, start_stop_enabled, restart_enabled)
+        return service(name, display_name, status, memory_used, cpu_usage, thread_count, handle_count, start_stop_enabled, restart_enabled)
 
     def to_dict(self) -> dict:
         result: dict = {}
@@ -70,9 +70,9 @@ class WelcomeElement:
         return result
 
 
-def welcome_from_dict_services(s: Any) -> List[WelcomeElement]:
-    return from_list(WelcomeElement.from_dict, s)
+def welcome_from_dict_services(s: Any) -> List[service]:
+    return from_list(service.from_dict, s)
 
 
-def welcome_to_dict_services(x: List[WelcomeElement]) -> Any:
-    return from_list(lambda x: to_class(WelcomeElement, x), x)
+def welcome_to_dict_services(x: List[service]) -> Any:
+    return from_list(lambda x: to_class(service, x), x)
