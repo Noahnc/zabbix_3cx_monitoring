@@ -6,7 +6,7 @@
 #                           Description
 #    Python script to get all kind of metrics from a 3cx server api
 #
-#                    Version 1.0 | 04.04.2022
+#                    Version 1.0 | 11.04.2022
 
 
 # import dependencies
@@ -192,7 +192,7 @@ def get3CXSystemStatus() -> status:
         exitScript(1, "3CX SystemStatus parse error", e)
     return data
 
-# function that gets the data from the 3cx api on a specific recource url
+# function that gets the data from the 3cx api on a specific recourse url
 def getDataFrom3CXAPI(uri) -> str:
     if auth_cookie is None: APIauthentication() # get auth cookie if not already available
     try:

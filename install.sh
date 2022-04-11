@@ -6,7 +6,7 @@
 #                           Description
 #  Bash Script for installing the 3cx monitoring script on a zabbix server
 #
-#                    Version 1.0 | 04.04.2022
+#                    Version 1.0 | 11.04.2022
 
 # global variables
 zabbix_external_scripts_path="/usr/lib/zabbix/externalscripts/"
