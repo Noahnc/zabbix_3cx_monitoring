@@ -17,9 +17,11 @@ import requests
 import sys
 
 # importing api models
-from api_models_3cx_monitoring.trunks import trunks, welcome_from_dict_trunks
+
 from api_models_3cx_monitoring.services import service, welcome_from_dict_services
 from api_models_3cx_monitoring.system_status import status, welcome_from_dict_systemstatus
+from api_models_3cx_monitoring.trunks import trunks, welcome_from_dict_trunk
+
 
 # Config variables
 VERSION = "1.0"
@@ -151,11 +153,23 @@ def getJsonOfCategory(category) -> str:
         dic = []
         trunks = get3CXTrunks().list
         for trunk in trunks:
-            temp_dic = {
-                "name": trunk.name,
-                "registered": trunk.is_registered,
-            }
-            dic.append(temp_dic)
+            if trunk.type == "Provider":
+                temp_dic = {
+                    "name": trunk.name,
+                    "registered": trunk.is_registered,
+                }
+                dic.append(temp_dic)
+    elif category == "3cx-sbc":
+        dic = []
+        trunks = get3CXTrunks().list
+        for trunk in trunks:
+            if trunk.type == "SBC":
+                temp_dic = {
+                    "name": trunk.name,
+                    "registered": True if trunk.status.status == False else False,
+                    "OutOfDate": trunk.out_of_date
+                }
+                dic.append(temp_dic)
     else:
             # exit script if no valid category is given
             exitScript(1, "Invalid category argument specified", category)
@@ -178,7 +192,7 @@ def get3CXServices() -> service:
 def get3CXTrunks() -> trunks:
     response = getDataFrom3CXAPI('TrunkList')
     try:
-        data = welcome_from_dict_trunks(json.loads(response))
+        data = welcome_from_dict_trunk(json.loads(response))
     except Exception as e:
         exitScript(1, "3CX Trunks parse error", e)
     return data
