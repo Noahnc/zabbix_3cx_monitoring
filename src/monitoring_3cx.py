@@ -267,6 +267,8 @@ def exitScript(exitCode: int, message: str, info) -> None:
     if debugMode:
         print(message + ": ")
         print(info)
+    if exitCode != 0 and debugMode:
+        raise
     exit(exitCode)
 
 # call main function if script is executed as main
