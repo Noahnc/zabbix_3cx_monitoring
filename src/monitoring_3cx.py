@@ -126,6 +126,7 @@ def getJsonOfCategory(category) -> str:
             "TrunkReg": values.trunks_registered,
             "LicenseActive": values.license_active,
             "CallsActive": values.calls_active,
+            "IpBlockCount": values.blacklisted_ip_count,
             "ip_address": values.ip_v4
 
         }
@@ -133,7 +134,6 @@ def getJsonOfCategory(category) -> str:
         values = get3CXSystemStatus()
         dic = {
             "Autobackup": values.backup_scheduled,
-            "IpBlockCount": values.blacklisted_ip_count,
             "LicCode": values.license_key,
             "InstVersion": values.version,
             "LicenseExpireDateUnix": values.expiration_date.timestamp(),
