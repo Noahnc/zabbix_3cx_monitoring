@@ -98,5 +98,5 @@ cp -r "$scrip_folder_path/src/$addon_script_file" "$zabbix_external_scripts_path
 chmod +x "${zabbix_external_scripts_path}${addon_script_file}" || error "Error while assigning execution permission to the script"
 
 OK "------------------------------------------------------"
-OK "        Installation finished successfully"
+OK "|        Installation finished successfully          |"
 OK "------------------------------------------------------"
